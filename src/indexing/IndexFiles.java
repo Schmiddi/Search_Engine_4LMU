@@ -24,6 +24,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
@@ -39,6 +40,7 @@ import general.Config;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
 
@@ -49,25 +51,31 @@ import java.util.Date;
  * usage information.
  */
 public class IndexFiles {
-	private static IndexWriterConfig iwc = new IndexWriterConfig(Config.analyzer);
+	private static IndexWriterConfig iwc = null;
 	private static IndexWriter writer = null;
-
-	/*
-	 * Weka tries to find that many, but the actual number varies, since if there are many words with the same count it
-	 * either keeps all or ignores all
-	 */
-	private final static int numOfFreqWords = 10;
+	
+	public static int counter = 0;
 
 	static {
+		/*
+		 * Clear index folder before initializing IndexWriterConfig
+		 */
+		File[] fs = (new File(Config.indexDir)).listFiles();
+		for(File f :fs){
+			f.delete();
+		}
+		
+		iwc = new IndexWriterConfig(Config.analyzer);
+		
 		try {
 			writer = new IndexWriter(FSDirectory.open(Paths.get(Config.indexDir)), iwc);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/** Index all text files under a directory. */
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		Date start = new Date();
 
 		try {
@@ -75,6 +83,7 @@ public class IndexFiles {
 
 			// Create a new index in the directory, removing any
 			// previously indexed documents:
+			// TODO: there is also a CREATE_OR_APPEND mode - might be interesting
 			iwc.setOpenMode(OpenMode.CREATE);
 
 			// Optional: for better indexing performance, if you
@@ -101,6 +110,7 @@ public class IndexFiles {
 		}
 		Date end = new Date();
 		System.out.println(end.getTime() - start.getTime() + " total milliseconds");
+		System.out.println(counter + " articles added");
 	}
 
 	/**
@@ -121,6 +131,8 @@ public class IndexFiles {
 	 *             If there is a low-level I/O error
 	 */
 	static void indexDocs(File file) throws IOException {
+				
+				
 		// do not try to index files that cannot be read
 		if (file.canRead()) {
 			if (file.isDirectory()) {
@@ -144,6 +156,7 @@ public class IndexFiles {
 							 * Skip all redirection pages
 							 */
 							if (!page.isRedirect()) {
+								counter++;
 								/** create new dataset */
 								Document doc = new Document();
 								try {
@@ -181,9 +194,11 @@ public class IndexFiles {
 	private static Document parseWikipage(Document doc, WikiPage page) throws IOException {
 
 		doc.add(new TextField(Fieldname.TITLE.toString(), page.getTitle().trim(), Field.Store.YES));
-		doc.add(new TextField(Fieldname.FREQWORDS.toString(), Utils.getMostFrequentWords(page.getWikiText(),
-				numOfFreqWords), Field.Store.YES));
-		doc.add(new TextField(Fieldname.BODY.toString(), Utils.wiki2text(page.getWikiText()), Field.Store.YES));
+		String fre = Utils.getMostFrequentWords(page.getWikiText(), Config.numOfFreqWords);
+//		System.out.println(fre);
+		doc.add(new TextField(Fieldname.FREQWORDS.toString(), fre, Field.Store.YES));
+		// The body is only stored, not indexed. If it should be indexed use TextField
+//		 doc.add(new StoredField(Fieldname.BODY.toString(), Utils.wiki2text(page.getWikiText())));
 		doc.add(new IntField(Fieldname.ID.toString(), Integer.parseInt(page.getID()), Field.Store.YES));
 
 		/*
@@ -192,8 +207,9 @@ public class IndexFiles {
 		 */
 		String links = "";
 		for (String link : page.getLinks()) {
-			links += link.replaceAll("[() ]", "") + " ";
+			links += link.replaceAll("[() .,'-]", "").toLowerCase() + " ";
 		}
+//		System.out.println(links);
 		doc.add(new TextField(Fieldname.LINKS.toString(), links, Field.Store.YES));
 		/*
 		 * Remove whitespace and parenthesis within the category, such that in tokenization each category is handled as
@@ -201,7 +217,7 @@ public class IndexFiles {
 		 */
 		String categories = "";
 		for (String category : page.getCategories()) {
-			categories += category.replaceAll("[() ]", "") + " ";
+			categories += category.replaceAll("[() .,'-]", "").toLowerCase() + " ";
 		}
 		doc.add(new TextField(Fieldname.CATEGORIES.toString(), categories, Field.Store.YES));
 

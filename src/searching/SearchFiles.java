@@ -28,52 +28,115 @@ import model.WikiDocument;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 
 /** Simple command-line based search demo. */
 public class SearchFiles {
 	/*
-	 * Static variables, for performance reasons, to avoid unnecessary creation
-	 * of IndexSearcher
+	 * Static variables, for performance reasons, to avoid unnecessary creation of IndexSearcher
 	 */
 
 	private static IndexSearcher searcher = null;
 
-	static{
+	static {
 		try {
-			searcher = new IndexSearcher(DirectoryReader
-					.open(FSDirectory.open(Paths.get(Config.indexDir))));
+			searcher = new IndexSearcher(DirectoryReader.open(FSDirectory.open(Paths.get(Config.indexDir))));
 		} catch (IOException e) {
 			e.printStackTrace();
-	}
-	}
-	public static void main(String[] argv) {
-		SearchFiles searchFile = new SearchFiles();
-		
-		
-		 SearchResult searchResult = searchFile.search("Aristotle",1,10,Fieldname.TITLE);
-		 System.out.println(searchResult.getDocuments().get(0).getFreqWords());
+		}
 	}
 
-	public SearchResult search(String queryString, int startResult,
-			int numberOfResults, Fieldname fieldname) {
+	public static void main(String[] argv) {
+		SearchFiles searchFile = new SearchFiles();
+
+		SearchResult searchResult = searchFile.search("Blue",1,10,Fieldname.TITLE);
+		System.out.println(searchResult.getDocuments().get(0).getTitle());
+		System.out.println(searchResult.getDocuments().get(0).getLinks());
+		System.out.println(searchResult.getDocuments().get(0).getCategories());
+
+		for (WikiDocument doc : searchResult.getDocuments()) {
+			System.out.println(doc.getTitle());
+		}
+		System.out.println("-------------------------------");
+		searchResult = searchFile.searchSimilarDocs(searchResult.getDocuments().get(0));
+		for (WikiDocument doc : searchResult.getDocuments()) {
+			System.out.println(doc.getTitle());
+		}
+	}
+
+	public SearchResult search(String queryString, int startResult, int numberOfResults, Fieldname fieldname) {
 
 		String[] fieldnames = new String[1];
 		fieldnames[0] = fieldname.toString();
 
-		return executeSearch(queryString, startResult, numberOfResults,
-				fieldnames);
+		return executeSearch(queryString, startResult, numberOfResults, fieldnames);
 	}
 
-	private SearchResult executeSearch(String queryString, int startResult,
-			int numberOfResults, String[] fieldnames) {
+	public SearchResult searchSimilarDocs(WikiDocument doc) {
+		SearchResult searchResult = null;
+
+		BooleanQuery bq = new BooleanQuery();
+
+		// Add the categories to the query
+		if(!doc.getCategories().isEmpty()){
+			BooleanQuery categories = new BooleanQuery();
+			
+			for(String cat: doc.getCategories()){
+				TermQuery tq = new TermQuery(new Term(Fieldname.CATEGORIES.toString(), cat));
+				categories.add(tq, Occur.SHOULD);
+			}
+//			categories.setBoost(4);
+			bq.add(categories,Occur.SHOULD);
+		}
+
+		// Add the categories to the query
+		if(!doc.getLinks().isEmpty()){
+			BooleanQuery links = new BooleanQuery();
+			
+			for(String cat: doc.getLinks()){
+				TermQuery tq = new TermQuery(new Term(Fieldname.LINKS.toString(), cat));
+				links.add(tq, Occur.SHOULD);
+			}
+//			links.setBoost(3);
+			bq.add(links,Occur.SHOULD);
+		}
+		
+		// Add the frequent words to the query
+		if(!doc.getFreqWords().isEmpty()){
+			BooleanQuery freqWords = new BooleanQuery();
+			
+			for(String cat: doc.getFreqWords()){
+				TermQuery tq = new TermQuery(new Term(Fieldname.FREQWORDS.toString(), cat));
+				freqWords.add(tq, Occur.SHOULD);
+			}
+//			freqWords.setBoost(14);
+			bq.add(freqWords,Occur.SHOULD);
+		}
+		
+		System.out.println("Query: " + bq.toString());
+
+		try {
+			searchResult = doPagingSearch(searcher, bq, 2, 10);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return searchResult;
+	}
+
+	private SearchResult executeSearch(String queryString, int startResult, int numberOfResults, String[] fieldnames) {
 		SearchResult searchResult = null;
 
 		try {
@@ -86,10 +149,9 @@ public class SearchFiles {
 			}
 
 			Query query = parser.parse(queryString);
-			System.out.println("Query: " + query.toString(fieldnames[0]));
+			System.out.println("Query: " + query.toString());
 
-			searchResult = doPagingSearch(searcher, query, startResult,
-					numberOfResults);
+			searchResult = doPagingSearch(searcher, query, startResult, numberOfResults);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -101,18 +163,15 @@ public class SearchFiles {
 	}
 
 	/**
-	 * This demonstrates a typical paging search scenario, where the search
-	 * engine presents pages of size n to the user. The user can then go to the
-	 * next page if interested in the next hits.
+	 * This demonstrates a typical paging search scenario, where the search engine presents pages of size n to the user.
+	 * The user can then go to the next page if interested in the next hits.
 	 * 
-	 * When the query is executed for the first time, then only enough results
-	 * are collected to fill 5 result pages. If the user wants to page beyond
-	 * this limit, then the query is executed another time and all hits are
-	 * collected.
+	 * When the query is executed for the first time, then only enough results are collected to fill 5 result pages. If
+	 * the user wants to page beyond this limit, then the query is executed another time and all hits are collected.
 	 * 
 	 */
-	private SearchResult doPagingSearch(IndexSearcher searcher, Query query,
-			int offset, int numberOfResults) throws IOException {
+	private SearchResult doPagingSearch(IndexSearcher searcher, Query query, int offset, int numberOfResults)
+			throws IOException {
 
 		int requestedResults = offset + numberOfResults - 1;
 
@@ -121,7 +180,7 @@ public class SearchFiles {
 		int numTotalHits = results.totalHits;
 
 		ScoreDoc[] hits = results.scoreDocs;
-		System.out.println(hits.length); //TODO: Maybe remove
+		System.out.println(hits.length); // TODO: Maybe remove
 		SearchResult searchResult = new SearchResult();
 
 		searchResult.setTotalHits(numTotalHits);
