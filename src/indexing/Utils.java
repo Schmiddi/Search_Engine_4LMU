@@ -36,7 +36,7 @@ public class Utils {
 		/*
 		 * Remove urls of the style |http....
 		 */
-		text = text.replaceAll("\\|http[^ ]*", "");
+		text = text.replaceAll("(\\||\\[)http[^ ]*", "");
 		/*
 		 * Remove {{DEFAULTSORT:....}}
 		 */
@@ -66,9 +66,8 @@ public class Utils {
 
 		StringToWordVector filter = new StringToWordVector();
 		filter.setLowerCaseTokens(true);
-		filter.setMinTermFreq(1);
+		filter.setMinTermFreq(2);
 		filter.setUseStoplist(true);
-		filter.setOutputWordCounts(true);
 		filter.setWordsToKeep(count);
 		
 		try {

@@ -1,5 +1,7 @@
 resources/
-lib/
+lib/lucene-5.1.0/
+lib/wikitext-standalone-2.6.0-SNAPSHOT/
+lib/wikixmlj/
 
 *.class
 

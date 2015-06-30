@@ -21,6 +21,7 @@ import general.Config;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Scanner;
 
 import model.Fieldname;
 import model.SearchResult;
@@ -32,7 +33,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -61,19 +61,30 @@ public class SearchFiles {
 	public static void main(String[] argv) {
 		SearchFiles searchFile = new SearchFiles();
 
-		SearchResult searchResult = searchFile.search("Blue",1,10,Fieldname.TITLE);
-		System.out.println(searchResult.getDocuments().get(0).getTitle());
-		System.out.println(searchResult.getDocuments().get(0).getLinks());
-		System.out.println(searchResult.getDocuments().get(0).getCategories());
+		Scanner scanner = new Scanner(System.in);
+		String input = "";
+		do{
+			System.out.println("Enter search word: ");
+			input = scanner.nextLine();
+			
+			SearchResult searchResult = searchFile.search(input,1,5,Fieldname.TITLE);
 
-		for (WikiDocument doc : searchResult.getDocuments()) {
-			System.out.println(doc.getTitle());
-		}
-		System.out.println("-------------------------------");
-		searchResult = searchFile.searchSimilarDocs(searchResult.getDocuments().get(0));
-		for (WikiDocument doc : searchResult.getDocuments()) {
-			System.out.println(doc.getTitle());
-		}
+			if(!searchResult.getDocuments().isEmpty()){
+				System.out.println(searchResult.getDocuments().get(0).getTitle());
+				System.out.println(searchResult.getDocuments().get(0).getLinks());
+				System.out.println(searchResult.getDocuments().get(0).getCategories());
+
+				for (WikiDocument doc : searchResult.getDocuments()) {
+					System.out.println(doc.getTitle());
+				}
+				System.out.println("-------------------------------");
+				searchResult = searchFile.searchSimilarDocs(searchResult.getDocuments().get(0));
+				for (WikiDocument doc : searchResult.getDocuments()) {
+					System.out.println(doc.getTitle());
+				}
+			}
+			System.out.println("\n\n");
+		}while(!input.equals("exit"));
 	}
 
 	public SearchResult search(String queryString, int startResult, int numberOfResults, Fieldname fieldname) {
@@ -121,7 +132,7 @@ public class SearchFiles {
 				TermQuery tq = new TermQuery(new Term(Fieldname.FREQWORDS.toString(), cat));
 				freqWords.add(tq, Occur.SHOULD);
 			}
-//			freqWords.setBoost(14);
+//			freqWords.setBoost(1);
 			bq.add(freqWords,Occur.SHOULD);
 		}
 		
@@ -180,7 +191,7 @@ public class SearchFiles {
 		int numTotalHits = results.totalHits;
 
 		ScoreDoc[] hits = results.scoreDocs;
-		System.out.println(hits.length); // TODO: Maybe remove
+//		System.out.println(hits.length); // TODO: Maybe remove
 		SearchResult searchResult = new SearchResult();
 
 		searchResult.setTotalHits(numTotalHits);
