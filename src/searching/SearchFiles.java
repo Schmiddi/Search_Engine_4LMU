@@ -51,6 +51,8 @@ public class SearchFiles {
 	private static IndexSearcher searcher = null;
 
 	static {
+		BooleanQuery.setMaxClauseCount(2048);
+		
 		try {
 			searcher = new IndexSearcher(DirectoryReader.open(FSDirectory.open(Paths.get(Config.indexDir))));
 		} catch (IOException e) {
@@ -58,34 +60,6 @@ public class SearchFiles {
 		}
 	}
 
-	public static void main(String[] argv) {
-		SearchFiles searchFile = new SearchFiles();
-
-		Scanner scanner = new Scanner(System.in);
-		String input = "";
-		do{
-			System.out.println("Enter search word: ");
-			input = scanner.nextLine();
-			
-			SearchResult searchResult = searchFile.search(input,1,5,Fieldname.TITLE);
-
-			if(!searchResult.getDocuments().isEmpty()){
-				System.out.println(searchResult.getDocuments().get(0).getTitle());
-				System.out.println(searchResult.getDocuments().get(0).getLinks());
-				System.out.println(searchResult.getDocuments().get(0).getCategories());
-
-				for (WikiDocument doc : searchResult.getDocuments()) {
-					System.out.println(doc.getTitle());
-				}
-				System.out.println("-------------------------------");
-				searchResult = searchFile.searchSimilarDocs(searchResult.getDocuments().get(0));
-				for (WikiDocument doc : searchResult.getDocuments()) {
-					System.out.println(doc.getTitle());
-				}
-			}
-			System.out.println("\n\n");
-		}while(!input.equals("exit"));
-	}
 
 	public SearchResult search(String queryString, int startResult, int numberOfResults, Fieldname fieldname) {
 
@@ -96,8 +70,16 @@ public class SearchFiles {
 	}
 
 	public SearchResult searchSimilarDocs(WikiDocument doc) {
+		return searchSimilarDocs(doc, 10);
+	}
+	
+	public SearchResult searchSimilarDocs(WikiDocument doc, int numResults) {
+		return searchSimilarDocs(doc, numResults, 1, 1, 1);
+	}
+	
+	public SearchResult searchSimilarDocs(WikiDocument doc, int numResults, float boostCat, float boostLinks, float boostFreqWords) {
 		SearchResult searchResult = null;
-
+		
 		BooleanQuery bq = new BooleanQuery();
 
 		// Add the categories to the query
@@ -108,7 +90,7 @@ public class SearchFiles {
 				TermQuery tq = new TermQuery(new Term(Fieldname.CATEGORIES.toString(), cat));
 				categories.add(tq, Occur.SHOULD);
 			}
-//			categories.setBoost(4);
+			categories.setBoost(boostCat);
 			bq.add(categories,Occur.SHOULD);
 		}
 
@@ -120,7 +102,7 @@ public class SearchFiles {
 				TermQuery tq = new TermQuery(new Term(Fieldname.LINKS.toString(), cat));
 				links.add(tq, Occur.SHOULD);
 			}
-//			links.setBoost(3);
+			links.setBoost(boostLinks);
 			bq.add(links,Occur.SHOULD);
 		}
 		
@@ -132,14 +114,14 @@ public class SearchFiles {
 				TermQuery tq = new TermQuery(new Term(Fieldname.FREQWORDS.toString(), cat));
 				freqWords.add(tq, Occur.SHOULD);
 			}
-//			freqWords.setBoost(1);
+			freqWords.setBoost(boostFreqWords);
 			bq.add(freqWords,Occur.SHOULD);
 		}
 		
-		System.out.println("Query: " + bq.toString());
+//		System.out.println("Query: " + bq.toString());
 
 		try {
-			searchResult = doPagingSearch(searcher, bq, 2, 10);
+			searchResult = doPagingSearch(searcher, bq, 2, numResults);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -160,7 +142,7 @@ public class SearchFiles {
 			}
 
 			Query query = parser.parse(queryString);
-			System.out.println("Query: " + query.toString());
+//			System.out.println("Query: " + query.toString());
 
 			searchResult = doPagingSearch(searcher, query, startResult, numberOfResults);
 
@@ -191,7 +173,7 @@ public class SearchFiles {
 		int numTotalHits = results.totalHits;
 
 		ScoreDoc[] hits = results.scoreDocs;
-//		System.out.println(hits.length); // TODO: Maybe remove
+//		System.out.println("Hits: " + hits.length); // TODO: Maybe remove
 		SearchResult searchResult = new SearchResult();
 
 		searchResult.setTotalHits(numTotalHits);
