@@ -13,7 +13,7 @@ import model.WikiDocument;
 public class EvalSearch {
 	private static String inputFile = "resources/TestData.txt";
 	private static float [] gridValues = {0f, 0.1f, 0.3f, 0.7f, 1f, 2f, 5f, 10f, 25f};
-	
+
 	public static void main(String[] args) throws IOException {
 		ArrayList<String[]> testData = loadTestData();
 		for (String[] str : testData) {
@@ -39,7 +39,7 @@ public class EvalSearch {
 						bestSetting[1] = gridValues[b];
 						bestSetting[2] = gridValues[c];
 						
-						System.out.println("New best score: " + totalScore + " (boostCat: " + gridValues[a] +", boostLinks: " + gridValues[b] + ", boostFreqWords: " + gridValues[c] + ")");
+						System.out.println("New best score: " + totalScore + " [avg: "+ totalScore * 1.0 / testData.size()  +"]"+ " (boostCat: " + gridValues[a] +", boostLinks: " + gridValues[b] + ", boostFreqWords: " + gridValues[c] + ")");
 					}
 				}
 			}
@@ -91,7 +91,7 @@ public class EvalSearch {
 	}
 
 	/**
-	 * Get the score py the position of the match, points according to the Formula One scoring system.
+	 * Get the score by the position of the match, points according to the Formula One scoring system.
 	 * 
 	 * @param position
 	 * @return
