@@ -21,8 +21,10 @@ import model.Fieldname;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -190,12 +192,18 @@ public class IndexFiles {
 	private static Document parseWikipage(Document doc, WikiPage page) throws IOException {
 
 		doc.add(new TextField(Fieldname.TITLE.toString(), page.getTitle().trim(), Field.Store.YES));
+		
+		// Field to allow spellchecking against the full title
+		FieldType ft = new FieldType(StringField.TYPE_NOT_STORED);
+	    ft.setOmitNorms(false);
+		doc.add(new Field(Fieldname.SPELLCHECK.toString(), page.getTitle().trim(), ft));
+		
 		String fre = Utils.getMostFrequentWords(page.getWikiText(), Config.numOfFreqWords);
 //		System.out.println(fre);
 		doc.add(new TextField(Fieldname.FREQWORDS.toString(), fre, Field.Store.YES));
 		// The body is only stored, not indexed. If it should be indexed use TextField
 //		 doc.add(new StoredField(Fieldname.BODY.toString(), Utils.wiki2text(page.getWikiText())));
-		doc.add(new IntField(Fieldname.ID.toString(), Integer.parseInt(page.getID()), Field.Store.YES));
+//		doc.add(new IntField(Fieldname.ID.toString(), Integer.parseInt(page.getID()), Field.Store.YES));
 
 		/*
 		 * Remove whitespace and parenthesis within the link, such that in tokenization each link is handled as one

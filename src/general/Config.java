@@ -5,6 +5,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 public class Config {
 	public final static String indexDir = "resources/index";
+	public final static String indexSpellCheckerDir = "resources/index_SpellChecker";
 	public final static String wikiFile = "resources/data/Wiki/en/enwiki-first8miolines(withCloseTag).xml";
 
 	public final static Analyzer analyzer = new StandardAnalyzer();

@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
+import javax.management.InvalidAttributeValueException;
+
 import model.Fieldname;
 import model.SearchResult;
 import model.WikiDocument;
@@ -124,6 +126,8 @@ public class SearchFiles {
 			searchResult = doPagingSearch(searcher, bq, 2, numResults);
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (InvalidAttributeValueException e) {
+			e.printStackTrace();
 		}
 
 		return searchResult;
@@ -150,6 +154,8 @@ public class SearchFiles {
 			e.printStackTrace();
 		} catch (ParseException e) {
 			e.printStackTrace();
+		} catch (InvalidAttributeValueException e) {
+			e.printStackTrace();
 		}
 
 		return searchResult;
@@ -161,10 +167,11 @@ public class SearchFiles {
 	 * 
 	 * When the query is executed for the first time, then only enough results are collected to fill 5 result pages. If
 	 * the user wants to page beyond this limit, then the query is executed another time and all hits are collected.
+	 * @throws InvalidAttributeValueException 
 	 * 
 	 */
 	private SearchResult doPagingSearch(IndexSearcher searcher, Query query, int offset, int numberOfResults)
-			throws IOException {
+			throws IOException, InvalidAttributeValueException {
 
 		int requestedResults = offset + numberOfResults - 1;
 

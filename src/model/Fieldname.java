@@ -1,7 +1,7 @@
 package model;
 
 public enum Fieldname {
-	TITLE("title"), CATEGORIES("categories"), LINKS("links"), FREQWORDS("frequentWords"), BODY("textBody"), ID("id");
+	TITLE("title"), CATEGORIES("categories"), LINKS("links"), FREQWORDS("frequentWords"), /*BODY("textBody"), ID("id"),*/ SPELLCHECK("spellCheck");
 	
 	private final String name;
 	

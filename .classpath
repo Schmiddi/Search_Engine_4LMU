@@ -10,9 +10,9 @@
 	<classpathentry kind="lib" path="lib/wikitext-standalone-2.6.0-SNAPSHOT/org.eclipse.mylyn.wikitext.core_2.6.0.N20150625-2041.jar"/>
 	<classpathentry kind="lib" path="lib/wikitext-standalone-2.6.0-SNAPSHOT/com.google.guava_15.0.0.v201403281430.jar"/>
 	<classpathentry kind="lib" path="lib/wikitext-standalone-2.6.0-SNAPSHOT/org.eclipse.mylyn.wikitext.mediawiki.core_2.6.0.N20150625-2041.jar"/>
-	<classpathentry kind="lib" path="lib/wikitext-standalone-2.6.0-SNAPSHOT/org.eclipse.mylyn.wikitext.textile.core_2.6.0.N20150625-2041.jar"/>
 	<classpathentry kind="lib" path="lib/jsoup-1.8.2.jar"/>
 	<classpathentry kind="lib" path="lib/weka3.7.jar"/>
 	<classpathentry kind="lib" path="lib/wikixmlj-r43_UTF8.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-5.1.0/suggest/lucene-suggest-5.1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

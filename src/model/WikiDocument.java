@@ -3,6 +3,8 @@ package model;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.management.InvalidAttributeValueException;
+
 public class WikiDocument {
 	private String title;
 	private List<String> categories;
@@ -11,7 +13,7 @@ public class WikiDocument {
 	private String textBody;
 	private int id;
 
-	public void setField(Fieldname field, String value) {
+	public void setField(Fieldname field, String value) throws InvalidAttributeValueException {
 		switch (field) {
 		case TITLE:
 			setTitle(value);
@@ -25,12 +27,14 @@ public class WikiDocument {
 		case FREQWORDS:
 			setFreqWords(stringToList(value));
 			break;
-		case BODY:
+		default:
+			throw new InvalidAttributeValueException("The fieldname: " + field.toString() + " is unknown!");
+		/*case BODY:
 			setTextBody(value);
 			break;
 		case ID:
 			setId(Integer.parseInt(value));
-			break;
+			break;*/
 		}
 	}
 
