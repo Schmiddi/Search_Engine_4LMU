@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import searching.SearchFiles;
 import model.Fieldname;
 import model.SearchResult;
-import model.WikiDocument;
 
 public class EvalSearch {
 	private static String inputFile = "resources/TestData.txt";
@@ -22,7 +21,6 @@ public class EvalSearch {
 
 		System.out.println("\nStarting grid search...\n");
 		
-		SearchFiles searchFile = new SearchFiles();
 		int overallBestScore = 0;
 		float[] bestSetting = {-1, -1, -1};
 		
@@ -86,7 +84,9 @@ public class EvalSearch {
 			testData.add(splitted);
 			line = read.readLine();
 		}
-
+		
+		read.close();
+		
 		return testData;
 	}
 

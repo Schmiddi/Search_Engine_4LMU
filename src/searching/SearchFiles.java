@@ -21,7 +21,6 @@ import general.Config;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Scanner;
 
 import javax.management.InvalidAttributeValueException;
 
@@ -180,7 +179,7 @@ public class SearchFiles {
 		int numTotalHits = results.totalHits;
 
 		ScoreDoc[] hits = results.scoreDocs;
-//		System.out.println("Hits: " + hits.length); // TODO: Maybe remove
+
 		SearchResult searchResult = new SearchResult();
 
 		searchResult.setTotalHits(numTotalHits);

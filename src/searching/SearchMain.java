@@ -54,5 +54,7 @@ public class SearchMain {
 				System.out.println("No result found!");
 			System.out.println("\n\n");
 		}while(!input.equals("exit"));
+		
+		scanner.close();
 	}
 }

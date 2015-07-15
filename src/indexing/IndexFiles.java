@@ -22,8 +22,6 @@ import model.Fieldname;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
@@ -63,6 +61,9 @@ public class IndexFiles {
 			f.delete();
 		}
 		
+		/*
+		 * Intialize IndexWriter
+		 */
 		iwc = new IndexWriterConfig(Config.analyzer);
 		
 		try {
@@ -81,7 +82,7 @@ public class IndexFiles {
 
 			// Create a new index in the directory, removing any
 			// previously indexed documents:
-			// TODO: there is also a CREATE_OR_APPEND mode - might be interesting
+			// Hint: there is also a CREATE_OR_APPEND mode - might be interesting
 			iwc.setOpenMode(OpenMode.CREATE);
 
 			// Optional: for better indexing performance, if you
