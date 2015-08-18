@@ -9,7 +9,7 @@ import model.WikiDocument;
 public class SearchMain {
 
 	public static void main(String[] argv) {
-		defaultStdInWithSimilarSearch(20);
+		defaultStdInWithSimilarSearch(30);
 	}
 	
 	public static void defaultStdInWithSimilarSearch(int numResultsSimSearch){

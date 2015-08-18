@@ -10,7 +10,7 @@ import model.Fieldname;
 import model.SearchResult;
 
 public class EvalSearch {
-	private static String inputFile = "resources/TestData.txt";
+	private static String inputFile = "resources/TestData_24mio.txt";
 	private static float [] gridValues = {0f, 0.1f, 0.3f, 0.7f, 1f, 2f, 5f, 10f, 25f};
 
 	public static void main(String[] args) throws IOException {

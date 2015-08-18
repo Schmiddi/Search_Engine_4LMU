@@ -49,23 +49,25 @@ import java.util.Date;
 public class IndexFiles {
 	private static IndexWriterConfig iwc = null;
 	private static IndexWriter writer = null;
-	
+
 	public static int counter = 0;
+	public static int counterSkipped = 0;
+	public static int counterArticles = 0;
 
 	static {
 		/*
 		 * Clear index folder before initializing IndexWriterConfig
 		 */
 		File[] fs = (new File(Config.indexDir)).listFiles();
-		for(File f :fs){
+		for (File f : fs) {
 			f.delete();
 		}
-		
+
 		/*
 		 * Intialize IndexWriter
 		 */
 		iwc = new IndexWriterConfig(Config.analyzer);
-		
+
 		try {
 			writer = new IndexWriter(FSDirectory.open(Paths.get(Config.indexDir)), iwc);
 		} catch (IOException e) {
@@ -74,7 +76,7 @@ public class IndexFiles {
 	}
 
 	/** Index all text files under a directory. */
-	public static void main(String[] args) {		
+	public static void main(String[] args) {
 		Date start = new Date();
 
 		try {
@@ -109,7 +111,9 @@ public class IndexFiles {
 		}
 		Date end = new Date();
 		System.out.println(end.getTime() - start.getTime() + " total milliseconds");
-		System.out.println(counter + " articles added");
+		System.out.println("Total articles: " + counter);
+		System.out.println("Articles added: " + counterArticles);
+		System.out.println("Articles skipped: " + counterSkipped);
 	}
 
 	/**
@@ -159,14 +163,22 @@ public class IndexFiles {
 								/** create new dataset */
 								Document doc = new Document();
 								try {
-									doc = parseWikipage(doc, page);
+									String title = page.getTitle().trim();
+									if(isMainNamespace(title)) {
+										counterArticles++;
+										doc = parseWikipage(doc, page);
 
-									/** New index, so we just add the document */
-									System.out.println("adding " + page.getTitle().trim());
-									if (doc != null)
-										writer.addDocument(doc);
-								} catch (IOException e) {
-									e.printStackTrace();
+										/** New index, so we just add the document */
+										System.out.println("adding " + page.getTitle().trim());
+										if (doc != null)
+											writer.addDocument(doc);
+									}
+									else {
+										counterSkipped++;
+										System.out.println("Article: " + title + " skipped (not main namespace)!");
+									}
+								} catch (Exception e) {
+									System.out.println("Exception at article num: " + counter);
 								}
 							}
 						}
@@ -178,6 +190,31 @@ public class IndexFiles {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Checks if the title doesn't have any of the wikipedia namespace prefixes
+	 * 
+	 * @param title
+	 * @return
+	 */
+	private static boolean isMainNamespace(String title) {
+		// Each namespace prefix has a :, so if there isn't a : its the main prefix, otherwise we need to check, if it
+		// is one of the define prefixes.
+		if (!title.contains(":"))
+			return true;
+		
+		// Any wikipedia namespace or 4 pseudo-namesspaces
+		if(title.startsWith("User:") || title.startsWith("Wikipedia:") || title.startsWith("File:")
+				 || title.startsWith("MediaWiki:") || title.startsWith("Template:")  || title.startsWith("Help:")
+				 || title.startsWith("Category:")  || title.startsWith("Portal:")  || title.startsWith("Book:")  
+				 || title.startsWith("Draft:")  || title.startsWith("Education Program:")  || title.startsWith("TimedText:")
+				 || title.startsWith("Module:") || title.startsWith("Topic:")
+				 || title.startsWith("CAT:")  || title.startsWith("H:")  || title.startsWith("MOS:")
+				 || title.startsWith("P:"))
+			return false;
+		
+		return true;
 	}
 
 	/**
@@ -193,18 +230,18 @@ public class IndexFiles {
 	private static Document parseWikipage(Document doc, WikiPage page) throws IOException {
 
 		doc.add(new TextField(Fieldname.TITLE.toString(), page.getTitle().trim(), Field.Store.YES));
-		
+
 		// Field to allow spellchecking against the full title
 		FieldType ft = new FieldType(StringField.TYPE_NOT_STORED);
-	    ft.setOmitNorms(false);
+		ft.setOmitNorms(false);
 		doc.add(new Field(Fieldname.SPELLCHECK.toString(), page.getTitle().trim(), ft));
-		
+
 		String fre = Utils.getMostFrequentWords(page.getWikiText(), Config.numOfFreqWords);
-//		System.out.println(fre);
+		// System.out.println(fre);
 		doc.add(new TextField(Fieldname.FREQWORDS.toString(), fre, Field.Store.YES));
 		// The body is only stored, not indexed. If it should be indexed use TextField
-//		 doc.add(new StoredField(Fieldname.BODY.toString(), Utils.wiki2text(page.getWikiText())));
-//		doc.add(new IntField(Fieldname.ID.toString(), Integer.parseInt(page.getID()), Field.Store.YES));
+		// doc.add(new StoredField(Fieldname.BODY.toString(), Utils.wiki2text(page.getWikiText())));
+		// doc.add(new IntField(Fieldname.ID.toString(), Integer.parseInt(page.getID()), Field.Store.YES));
 
 		/*
 		 * Remove whitespace and parenthesis within the link, such that in tokenization each link is handled as one
@@ -214,7 +251,7 @@ public class IndexFiles {
 		for (String link : page.getLinks()) {
 			links += link.replaceAll("[() .,'-]", "").toLowerCase() + " ";
 		}
-//		System.out.println(links);
+		// System.out.println(links);
 		doc.add(new TextField(Fieldname.LINKS.toString(), links, Field.Store.YES));
 		/*
 		 * Remove whitespace and parenthesis within the category, such that in tokenization each category is handled as
